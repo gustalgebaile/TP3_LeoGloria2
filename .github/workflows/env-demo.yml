@@ -1,0 +1,26 @@
+name: Environment Demo
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  environment-test:
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_ENV: staging
+
+    steps:
+      - name: Display environment variable
+        run: |
+          echo "Ambiente de Deploy: $DEPLOY_ENV"
+          echo "DEPLOY_ENV está configurado como: ${{ env.DEPLOY_ENV }}"
+
+      - name: Show all environment info
+        run: |
+          echo "=== Informações do Ambiente ==="
+          echo "Runner OS: $RUNNER_OS"
+          echo "Workflow: $GITHUB_WORKFLOW"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Deploy Environment: $DEPLOY_ENV"
