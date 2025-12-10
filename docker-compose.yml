@@ -1,6 +1,27 @@
 version: "3.9"
 
 services:
+  devcalc-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devcalc_api
+    ports:
+      - "7000:7000"
+    networks:
+      - dev_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   postgres:
     image: postgres:15
     container_name: pg_db
@@ -39,6 +60,8 @@ services:
     tty: true
     stdin_open: true
     depends_on:
+      devcalc-api:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
