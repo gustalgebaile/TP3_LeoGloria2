@@ -10,5 +10,6 @@ public class Main {
             int a = Integer.parseInt(ctx.queryParam("a"));
             int b = Integer.parseInt(ctx.queryParam("b"));
             ctx.result(String.valueOf(a + b));
-        }
-;}
+        });
+    }
+}
