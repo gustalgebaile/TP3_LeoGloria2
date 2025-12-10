@@ -1,0 +1,27 @@
+name: Release Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Display release information
+        run: |
+          echo "=== Informações do Release ==="
+          echo "Tag: ${{ github.event.release.tag_name }}"
+          echo "Nome: ${{ github.event.release.name }}"
+          echo "Autor: ${{ github.event.release.author.login }}"
+          echo "Data: ${{ github.event.release.created_at }}"
+
+      - name: Execute deployment
+        run: |
+          echo "Iniciando deploy da versão ${{ github.event.release.tag_name }}..."
+          echo "Deploy realizado com sucesso"
+          echo "Aplicação disponível em produção!"

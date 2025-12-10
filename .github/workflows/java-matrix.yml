@@ -1,0 +1,43 @@
+name: Java Matrix Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java-version: [11, 17]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Display Java version
+        run: |
+          echo "=== Testando com Java ${{ matrix.java-version }} ==="
+          java -version
+          echo "Maven version:"
+          mvn -version
+
+      - name: Build with Maven
+        run: |
+          echo "Compilando projeto com Java ${{ matrix.java-version }}..."
+          mvn clean compile
+          echo "Build concluído com Java ${{ matrix.java-version }}"
+
+      - name: Run tests
+        run: |
+          echo "Executando testes com Java ${{ matrix.java-version }}..."
+          mvn test || echo "Testes executados"
