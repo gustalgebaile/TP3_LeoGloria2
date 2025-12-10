@@ -4,11 +4,11 @@
 [![Java Matrix Build](https://github.com/gustalgebaile/TP3_LeoGloria2/actions/workflows/java-matrix.yml/badge.svg)](https://github.com/gustalgebaile/TP3_LeoGloria2/actions/workflows/java-matrix.yml)
 [![Hello CI/CD](https://github.com/gustalgebaile/TP3_LeoGloria2/actions/workflows/hello.yml/badge.svg)](https://github.com/gustalgebaile/TP3_LeoGloria2/actions/workflows/hello.yml)
 
-Aplicação de calculadora desenvolvida com Javalin e Maven, utilizando CI/CD com GitHub Actions.
+Aplicação de calculadora desenvolvida com Javalin e Maven, utilizando CI/CD com GitHub Actions e Docker.
 
 ## Sobre o Projeto
 
-API REST simples para operações matemáticas, containerizada com Docker e com pipeline completo de CI/CD.
+API REST simples para operações matemáticas, containerizada com Docker e publicada no DockerHub com pipeline completo de CI/CD.
 
 ## TP3 - GitHub Actions e CI/CD
 
@@ -161,36 +161,193 @@ Secrets são valores sensíveis como chaves de API, senhas e tokens que precisam
 
 Implementamos conceitos de estratégias de deploy. Blue-Green é uma estratégia onde mantemos dois ambientes idênticos e redirecionamos instantaneamente o tráfego entre eles, permitindo rollback imediato mas exigindo o dobro de recursos. Rolling Update atualiza instâncias gradualmente, mantendo o serviço disponível enquanto apenas parte das máquinas está sendo atualizada, economizando recursos mas com deployment mais longo. O workflow deploy.yml implementa deploy automático em dev e manual em staging/prod, simulando um pipeline real onde produção nunca é atualizada automaticamente.
 
+## Docker - Containerização
+
+### Dockerfile
+
+O projeto utiliza multi-stage build para otimizar o tamanho da imagem final:
+
+```dockerfile
+# Build stage - Compila a aplicação com Maven
+FROM maven:3.9.1-eclipse-temurin-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package
+
+# Runtime stage - Imagem final otimizada
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/devcalc-api-1.0-SNAPSHOT.jar devcalc.jar
+EXPOSE 7000
+CMD ["java", "-jar", "devcalc.jar"]
+```
+
+**Características:**
+- Multi-stage build reduz tamanho final da imagem
+- Imagem base Alpine (leve e segura)
+- Apenas JRE no runtime (não precisa de JDK completo)
+- Expõe porta 7000 da aplicação
+
+### Build e Execução
+
+**Build da imagem:**
+```powershell
+docker build -t gustalgebaile/devcalc-api:1.0.0 .
+docker build -t gustalgebaile/devcalc-api:latest .
+```
+
+**Executar container:**
+```powershell
+docker run -d -p 7000:7000 --name devcalc gustalgebaile/devcalc-api:1.0.0
+```
+
+**Verificar container:**
+```powershell
+docker ps
+docker logs devcalc
+```
+
+**Testar aplicação:**
+```powershell
+curl http://localhost:7000
+curl "http://localhost:7000/add?a=10&b=5"
+```
+
+**Parar container:**
+```powershell
+docker stop devcalc
+docker rm devcalc
+```
+
+### Imagem no DockerHub
+
+A imagem da aplicação está publicada no DockerHub em:
+
+**Repositório:** https://hub.docker.com/r/gustalgebaile/devcalc-api
+
+**Pull da imagem:**
+```powershell
+docker pull gustalgebaile/devcalc-api:latest
+docker pull gustalgebaile/devcalc-api:1.0.0
+```
+
+**Tags disponíveis:**
+- `latest` - Versão mais recente
+- `1.0.0` - Versão estável
+
+### Docker Compose
+
+O projeto inclui `docker-compose.yml` para orquestração de múltiplos containers em ambiente de desenvolvimento:
+
+```bash
+# Iniciar todos os serviços
+docker compose up -d
+
+# Ver status dos serviços
+docker compose ps
+
+# Ver logs da aplicação
+docker compose logs -f devcalc-api
+
+# Parar todos os serviços
+docker compose down
+```
+
+**Serviços incluídos:**
+- `devcalc-api` - API principal (porta 7000)
+- `postgres` - Banco de dados PostgreSQL (porta 5432)
+- `redis` - Cache Redis (porta 6379)
+- `busybox` - Container de teste
+
+**Arquivo: `docker-compose.yml`**
+
+Inclui health checks para garantir que todos os serviços estão funcionando corretamente antes de iniciar dependências.
+
 ### Estrutura de Arquivos
 
 ```
-.github/
-└── workflows/
-    ├── hello.yml              # Workflow básico
-    ├── tests.yml              # Testes em PR
-    ├── gradle-ci.yml          # Build com Maven
-    ├── env-demo.yml           # Variáveis de ambiente
-    ├── secret-demo.yml        # Demonstração de secrets
-    ├── mask-demo.yml          # Mascaramento de dados
-    ├── release-deploy.yml     # Deploy em releases
-    ├── java-matrix.yml        # Matrix strategy
-    └── deploy.yml             # Deploy multi-ambiente
+TP3_LeoGloria2/
+├── .github/
+│   └── workflows/
+│       ├── hello.yml              # Workflow básico
+│       ├── tests.yml              # Testes em PR
+│       ├── gradle-ci.yml          # Build com Maven
+│       ├── env-demo.yml           # Variáveis de ambiente
+│       ├── secret-demo.yml        # Demonstração de secrets
+│       ├── mask-demo.yml          # Mascaramento de dados
+│       ├── release-deploy.yml     # Deploy em releases
+│       ├── java-matrix.yml        # Matrix strategy
+│       └── deploy.yml             # Deploy multi-ambiente
+├── src/
+│   ├── main/
+│   │   └── java/
+│   │       └── com/devcalc/
+│   │           ├── CalculatorService.java
+│   │           └── Main.java
+│   └── test/
+│       └── java/
+│           └── com/devcalc/
+│               └── CalculatorServiceTest.java
+├── Dockerfile                     # Imagem Docker
+├── docker-compose.yml             # Orquestração Docker
+├── pom.xml                        # Configuração Maven
+└── README.md                      # Este arquivo
+```
 
-src/
-├── main/
-│   └── java/
-│       └── com/devcalc/
-│           ├── CaculatorService.java
-│           └── Main.java
-└── test/
-    └── java/
-        └── com/devcalc/
-            └── CalculatorServiceTest.java
+### Tecnologias Utilizadas
 
-pom.xml                        # Configuração Maven
-Dockerfile                     # Imagem Docker
-docker-compose.yml            # Orquestração Docker
-README.md                      # Este arquivo
+- **Java 17**: Linguagem principal
+- **Maven**: Gerenciamento de dependências e build
+- **Javalin**: Framework web para API REST
+- **Docker**: Containerização da aplicação
+- **Docker Compose**: Orquestração de containers localmente
+- **GitHub Actions**: CI/CD e automação
+- **PostgreSQL**: Banco de dados
+- **Redis**: Cache distribuído
+
+### Como Executar Localmente
+
+**Pré-requisitos:**
+- Java 17 ou superior
+- Maven 3.8+
+- Docker e Docker Compose (opcional)
+
+#### Execução sem Docker
+
+```bash
+mvn clean install
+mvn exec:java -Dexec.mainClass="com.devcalc.Main"
+```
+
+A aplicação estará disponível em `http://localhost:7000`
+
+#### Execução com Docker Compose
+
+```bash
+# Adicionar PATH do Docker ao PowerShell (se necessário)
+$env:Path += ";C:\Program Files\Docker\Docker\resources\bin"
+
+# Iniciar serviços
+docker compose up -d
+
+# Acessar aplicação
+curl http://localhost:7000
+curl "http://localhost:7000/add?a=5&b=3"
+
+# Parar serviços
+docker compose down
+```
+
+### Endpoints Disponíveis
+
+- `GET /` - Retorna mensagem de confirmação
+- `GET /add?a=5&b=3` - Retorna a soma de a e b
+
+Exemplo de resposta:
+```
+GET http://localhost:7000/ → "Aplicação rodando no Kubernetes!"
+GET http://localhost:7000/add?a=5&b=3 → "8"
 ```
 
 ### Como Reexecutar os Workflows
@@ -223,36 +380,10 @@ git push origin feature/test
 4. Adicione descrição (opcional)
 5. Clique em **Publish release**
 
-### Tecnologias Utilizadas
+### Autor
 
-- **Java 17**: Linguagem principal
-- **Maven**: Gerenciamento de dependências e build
-- **Javalin**: Framework web para API REST
-- **Docker**: Containerização da aplicação
-- **Docker Compose**: Orquestração de containers
-- **GitHub Actions**: CI/CD e automação
-- **JUnit 4**: Framework de testes
+Desenvolvido por [gustalgebaile](https://github.com/gustalgebaile) como parte do TP3 de Arquitetura de Software.
 
-### Como Executar Localmente
+### Licença
 
-**Pré-requisitos:**
-- Java 17 ou superior
-- Maven 3.8+
-- Docker (opcional)
-
-**Execução sem Docker:**
-```bash
-mvn clean install
-mvn exec:java -Dexec.mainClass="com.devcalc.Main"
-```
-
-A aplicação estará disponível em `http://localhost:7000`
-
-**Endpoints disponíveis:**
-- `GET /` - Retorna mensagem de confirmação
-- `GET /add?a=5&b=3` - Retorna a soma de a e b
-
-**Execução com Docker:**
-```bash
-docker-compose up
-```
+Este projeto é fornecido como material educacional.
