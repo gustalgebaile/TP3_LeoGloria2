@@ -8,5 +8,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Enable debug logging
+        run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+
       - name: Print Hello CI/CD
-        run: echo "Hello CI/CD"
+        run: |
+          echo "Hello CI/CD"
+          echo "::debug::Esta é uma mensagem de debug detalhada"
+          echo "::debug::Runner OS: $RUNNER_OS"
+          echo "::debug::Workflow: $GITHUB_WORKFLOW"
+          echo "::debug::Branch: $GITHUB_REF"
+
+      - name: Display additional debug info
+        run: |
+          echo "Informações básicas do workflow"
+          echo "::debug::Job ID: ${{ github.job }}"
+          echo "::debug::Run ID: ${{ github.run_id }}"
+          echo "::debug::Run Number: ${{ github.run_number }}"
+          echo "::debug::Actor: ${{ github.actor }}"
+          echo "::debug::Repository: ${{ github.repository }}"
+          echo "::debug::Commit SHA: ${{ github.sha }}"
