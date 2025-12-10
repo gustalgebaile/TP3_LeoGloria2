@@ -8,7 +8,7 @@ public class Main {
         app.get("/", ctx -> ctx.result("Aplicação rodando no Kubernetes!"));
         app.get("/add", ctx -> {
             int a = Integer.parseInt(ctx.queryParam("a"));
-            int b = Integer.parseInt(ctx.queryParam("b"));
+            int b = Integer.parseInt(ctx.queryParam("c"));
             ctx.result(String.valueOf(a + b));
         });
     }
